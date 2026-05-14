@@ -1,0 +1,22 @@
+{
+  "name": "nodejs-simulate-file-upload",
+  "version": "1.0.0",
+  "description": "for testing streaming while uploading files",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ykoziy/nodejs-simulate-file-upload.git"
+  },
+  "author": "Yuriy Koziy",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ykoziy/nodejs-simulate-file-upload/issues"
+  },
+  "homepage": "https://github.com/ykoziy/nodejs-simulate-file-upload#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
