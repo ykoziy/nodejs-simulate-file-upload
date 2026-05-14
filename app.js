@@ -28,8 +28,8 @@ const secret = response.SecretString;
 const validateApiKey = (req, res, next) => {
     const clientKey = req.header('api-key'); // Standard header for API keys
     console.log("client key" + clientKey);
-    console.log("server api key" + secret);
-    if (!clientKey || clientKey !== secret) {
+    console.log("server api key" + secret['x-api-key']);
+    if (!clientKey || clientKey !== secret['x-api-key']) {
         return res.status(401).json({ error: "Forbidden: Invalid API Key" });
     }
     next();
