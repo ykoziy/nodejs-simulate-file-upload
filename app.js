@@ -23,7 +23,7 @@ try {
   throw error;
 }
 
-const secret = response.SecretString;
+const secret = JSON.parse(response.SecretString);
 
 const validateApiKey = (req, res, next) => {
     const clientKey = req.header('api-key'); // Standard header for API keys
