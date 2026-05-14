@@ -1,5 +1,7 @@
 import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
 
 const app = express();
 app.use(express.json());
@@ -16,7 +18,7 @@ try {
   response = await client.send(
     new GetSecretValueCommand({
       SecretId: secret_name,
-      VersionStage: "AWSCURRENT", // VersionStage defaults to AWSCURRENT if unspecified
+      VersionStage: "AWSCURRENT",
     })
   );
 } catch (error) {
@@ -26,18 +28,36 @@ try {
 const secret = JSON.parse(response.SecretString);
 
 const validateApiKey = (req, res, next) => {
-    const clientKey = req.header('api-key'); // Standard header for API keys
-    console.log("client key" + clientKey);
-    console.log("server api key" + secret['x-api-key']);
+    const clientKey = req.header('api-key');
     if (!clientKey || clientKey !== secret['x-api-key']) {
         return res.status(401).json({ error: "Forbidden: Invalid API Key" });
     }
     next();
 };
 
-// Apply to your POST endpoint
 app.post('/uploadFile', validateApiKey, (req, res) => {
-    res.send("Authorized request successful!");
+    // Define local path on EC2
+    const filename = req.headers['x-file-name'] || 'uploaded_file';
+    const filePath = path.join(__dirname, 'uploads', filename);
+    const writeStream = fs.createWriteStream(filePath);
+
+    // Pipe request directly to disk
+    req.pipe(writeStream);
+
+    writeStream.on('finish', () => {
+        res.status(200).send('File uploaded successfully');
+    });
+
+    writeStream.on('error', (err) => {
+        console.error(err);
+        res.status(500).send('Error writing file');
+    });
+
+    req.on('error', (err) => {
+        console.error(err);
+        writeStream.close();
+        res.status(500).send('Error receiving file');
+    });
 });
 
 app.listen(3000, '0.0.0.0', () => {
