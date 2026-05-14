@@ -42,6 +42,9 @@ app.post('/uploadFile', validateApiKey, (req, res) => {
     const writeStream = fs.createWriteStream(filePath);
 
     // Pipe request directly to disk
+    req.on('data', chunk => {
+        writeStream.write(chunk);
+    })
     req.pipe(writeStream);
 
     writeStream.on('finish', () => {
