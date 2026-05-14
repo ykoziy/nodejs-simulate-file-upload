@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/ykoziy/nodejs-simulate-file-upload#readme",
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.1047.0",
     "express": "^5.2.1"
   }
 }
