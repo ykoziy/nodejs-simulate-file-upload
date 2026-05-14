@@ -4,27 +4,32 @@ import express from 'express';
 const app = express();
 app.use(express.json());
 
-const client = new SecretsManagerClient({ region: "us-east-1" });
 const secret_name = "node-server/api-key";
 
-async function getApiKey() {
-    const response = await client.send(
-        new GetSecretValueCommand({ SecretId: secret_name })
-    );
-    const secret = JSON.parse(response.SecretString);
-    return secret.MY_API_KEY;
+const client = new SecretsManagerClient({
+  region: "us-east-1",
+});
+
+let response;
+
+try {
+  response = await client.send(
+    new GetSecretValueCommand({
+      SecretId: secret_name,
+      VersionStage: "AWSCURRENT", // VersionStage defaults to AWSCURRENT if unspecified
+    })
+  );
+} catch (error) {
+  throw error;
 }
 
-let VALID_API_KEY;
-
-// Load key once on startup
-getApiKey().then(key => { VALID_API_KEY = key; });
+const secret = response.SecretString;
 
 const validateApiKey = (req, res, next) => {
     const clientKey = req.header('api-key'); // Standard header for API keys
     console.log("client key" + clientKey);
-    console.log("server api key" + VALID_API_KEY);
-    if (!clientKey || clientKey !== VALID_API_KEY) {
+    console.log("server api key" + secret);
+    if (!clientKey || clientKey !== secret) {
         return res.status(401).json({ error: "Forbidden: Invalid API Key" });
     }
     next();
