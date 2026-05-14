@@ -34,4 +34,6 @@ app.post('/uploadFile', validateApiKey, (req, res) => {
   res.send("Authorized request successful!");
 });
 
-app.listen(3000);
+app.listen(3000, '0.0.0.0', () => {
+  console.log('Server is running on port 3000');
+});
