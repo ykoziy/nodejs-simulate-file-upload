@@ -6,6 +6,8 @@ import path from 'path';
 const app = express();
 app.use(express.json());
 
+const __dirname = import.meta.dirname;
+
 const secret_name = "node-server/api-key";
 
 const client = new SecretsManagerClient({
