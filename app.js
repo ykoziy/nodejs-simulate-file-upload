@@ -43,14 +43,15 @@ app.post('/uploadFile', validateApiKey, (req, res) => {
 
     // Pipe request directly to disk
     req.on('data', chunk => {
+        console.log('writing chunk.....');
         writeStream.write(chunk);
     })
     req.pipe(writeStream);
 
-    writeStream.on('finish', () => {
-        res.status(200).send('File uploaded successfully');
+    writeStream.on('end', () => {
+        writeStream.end();
+        res.status(200).json({message: 'File uploaded successfully'})
     });
-
     writeStream.on('error', (err) => {
         console.error(err);
         res.status(500).send('Error writing file');
