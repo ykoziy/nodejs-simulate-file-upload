@@ -12,20 +12,20 @@ const __dirname = import.meta.dirname;
 const secret_name = "node-server/api-key";
 
 const client = new SecretsManagerClient({
-  region: "us-east-1",
+    region: "us-east-1",
 });
 
 let response;
 
 try {
-  response = await client.send(
-    new GetSecretValueCommand({
-      SecretId: secret_name,
-      VersionStage: "AWSCURRENT",
-    })
-  );
+    response = await client.send(
+        new GetSecretValueCommand({
+            SecretId: secret_name,
+            VersionStage: "AWSCURRENT",
+        })
+    );
 } catch (error) {
-  throw error;
+    throw error;
 }
 
 const secret = JSON.parse(response.SecretString);
@@ -40,7 +40,12 @@ const validateApiKey = (req, res, next) => {
 
 app.post('/uploadFile', validateApiKey, (req, res) => {
     // Initialize Busboy with request headers
-    const busboy = Busboy({ headers: req.headers });
+    const busboy = Busboy({
+        headers: req.headers,
+        limits: {
+            fileSize: 629145726
+        }
+    });
 
     busboy.on('file', (name, file, info) => {
         const { filename } = info;
@@ -58,11 +63,11 @@ app.post('/uploadFile', validateApiKey, (req, res) => {
 
     busboy.on('finish', () => {
         console.log('Upload complete');
-        res.status(200).json({message: 'Uploaded file sucessfully!'});
+        res.status(200).json({ message: 'Uploaded file sucessfully!' });
     });
-    
+
     busboy.on('error', () => {
-        res.status(500).json({message: 'Internal server error!'});
+        res.status(500).json({ message: 'Internal server error!' });
     });
 
     // Pipe the request into busboy
