@@ -2,6 +2,7 @@ import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-sec
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
+import Busboy from 'busboy';
 
 const app = express();
 app.use(express.json());
@@ -38,32 +39,26 @@ const validateApiKey = (req, res, next) => {
 };
 
 app.post('/uploadFile', validateApiKey, (req, res) => {
-    // Define local path on EC2
-    const filename = req.headers['x-file-name'] || 'uploaded_file';
-    const filePath = path.join(__dirname, 'uploads', filename);
-    const writeStream = fs.createWriteStream(filePath);
+    // Initialize Busboy with request headers
+    const busboy = Busboy({ headers: req.headers });
 
-    // Pipe request directly to disk
-    req.on('data', chunk => {
-        console.log('writing chunk.....');
-        writeStream.write(chunk);
-    })
-    req.pipe(writeStream);
+    busboy.on('file', (name, file, info) => {
+        const { filename } = info;
+        const saveTo = path.join(__dirname, 'uploads', filename);
+        console.log(`Uploading: ${filename}`);
 
-    writeStream.on('end', () => {
-        writeStream.end();
-        res.status(200).json({message: 'File uploaded successfully'})
-    });
-    writeStream.on('error', (err) => {
-        console.error(err);
-        res.status(500).send('Error writing file');
+        // Stream the file chunk by chunk
+        file.pipe(fs.createWriteStream(saveTo));
     });
 
-    req.on('error', (err) => {
-        console.error(err);
-        writeStream.close();
-        res.status(500).send('Error receiving file');
+    busboy.on('finish', () => {
+        console.log('Upload complete');
+        res.writeHead(200, { 'Connection': 'close' });
+        res.end("File uploaded successfully");
     });
+
+    // Pipe the request into busboy
+    req.pipe(busboy);
 });
 
 app.listen(3000, '0.0.0.0', () => {
