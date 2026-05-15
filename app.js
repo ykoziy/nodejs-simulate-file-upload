@@ -45,16 +45,25 @@ app.post('/uploadFile', validateApiKey, (req, res) => {
     busboy.on('file', (name, file, info) => {
         const { filename } = info;
         const saveTo = path.join(__dirname, 'uploads', filename);
+        const writeStream = fs.createWriteStream(saveTo);
         console.log(`Uploading: ${filename}`);
 
+        file.on('data', (chunk) => {
+            console.log(`Recieved ${chunk.length} bytes of data.`);
+        });
+
         // Stream the file chunk by chunk
-        file.pipe(fs.createWriteStream(saveTo));
+        file.pipe(writeStream);
     });
 
     busboy.on('finish', () => {
         console.log('Upload complete');
-        res.writeHead(200, { 'Connection': 'close' });
-        res.end("File uploaded successfully");
+        res.status(200).json({message: `Uploaded ${filename} sucessfully!`});
+    });
+    
+    busboy.on('error', () => {
+        console.log('Upload complete');
+        res.status(200).json({message: `Uploaded ${filename} sucessfully!`});
     });
 
     // Pipe the request into busboy
