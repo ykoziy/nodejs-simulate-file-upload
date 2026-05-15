@@ -58,12 +58,11 @@ app.post('/uploadFile', validateApiKey, (req, res) => {
 
     busboy.on('finish', () => {
         console.log('Upload complete');
-        res.status(200).json({message: `Uploaded ${filename} sucessfully!`});
+        res.status(200).json({message: 'Uploaded file sucessfully!'});
     });
     
     busboy.on('error', () => {
-        console.log('Upload complete');
-        res.status(200).json({message: `Uploaded ${filename} sucessfully!`});
+        res.status(500).json({message: 'Internal server error!'});
     });
 
     // Pipe the request into busboy
