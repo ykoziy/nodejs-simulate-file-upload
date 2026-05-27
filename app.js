@@ -42,6 +42,9 @@ app.post('/uploadFile', validateApiKey, (req, res) => {
     const filename = req.headers['x-file-name'] || 'uploaded_file';
     const filePath = path.join(__dirname, 'uploads', filename);
     const writeStream = fs.createWriteStream(filePath);
+	
+	console.log('hit upload route');
+	console.log('req headers:', req.headers);
 
     // Pipe request directly to disk
     req.on('data', chunk => {
