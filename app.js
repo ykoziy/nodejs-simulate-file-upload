@@ -50,7 +50,7 @@ app.post('/uploadFile', validateApiKey, (req, res) => {
     })
     req.pipe(writeStream);
 
-    writeStream.on('end', () => {
+    writeStream.on('finish', () => {
         writeStream.end();
         res.status(200).json({message: 'File uploaded successfully'})
     });
