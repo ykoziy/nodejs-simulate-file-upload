@@ -2,6 +2,7 @@ import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-sec
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
+import Busboy from 'busboy';
 
 const app = express();
 app.use(express.json());
@@ -11,20 +12,20 @@ const __dirname = import.meta.dirname;
 const secret_name = "node-server/api-key";
 
 const client = new SecretsManagerClient({
-  region: "us-east-1",
+    region: "us-east-1",
 });
 
 let response;
 
 try {
-  response = await client.send(
-    new GetSecretValueCommand({
-      SecretId: secret_name,
-      VersionStage: "AWSCURRENT",
-    })
-  );
+    response = await client.send(
+        new GetSecretValueCommand({
+            SecretId: secret_name,
+            VersionStage: "AWSCURRENT",
+        })
+    );
 } catch (error) {
-  throw error;
+    throw error;
 }
 
 const secret = JSON.parse(response.SecretString);
@@ -38,35 +39,43 @@ const validateApiKey = (req, res, next) => {
 };
 
 app.post('/uploadFile', validateApiKey, (req, res) => {
-    // Define local path on EC2
-    const filename = req.headers['x-file-name'] || 'uploaded_file';
-    const filePath = path.join(__dirname, 'uploads', filename);
-    const writeStream = fs.createWriteStream(filePath);
-	
-	console.log('hit upload route');
-	console.log('req headers:', req.headers);
-
-    // Pipe request directly to disk
-    req.on('data', chunk => {
-        console.log('writing chunk.....');
-        writeStream.write(chunk);
-    })
-    req.pipe(writeStream);
-
-    writeStream.on('finish', () => {
-        writeStream.end();
-        res.status(200).json({message: 'File uploaded successfully'})
-    });
-    writeStream.on('error', (err) => {
-        console.error(err);
-        res.status(500).send('Error writing file');
+    // Initialize Busboy with request headers
+    const busboy = Busboy({
+        headers: req.headers,
+        limits: {
+            fileSize: 629145726
+        }
     });
 
-    req.on('error', (err) => {
-        console.error(err);
-        writeStream.close();
-        res.status(500).send('Error receiving file');
+    busboy.on('file', (name, file, info) => {
+        const { filename } = info;
+        const saveTo = path.join(__dirname, 'uploads', filename);
+        const writeStream = fs.createWriteStream(saveTo);
+        console.log(`Uploading: ${filename}`);
+
+        file.on('data', (chunk) => {
+            console.log(`Recieved ${chunk.length} bytes of data.`);
+        });
+
+        // Stream the file chunk by chunk
+        file.pipe(writeStream);
     });
+
+    busboy.on('finish', () => {
+        console.log('Upload complete');
+        res.status(200).json({ message: 'Uploaded file sucessfully!' });
+    });
+
+    busboy.on('error', () => {
+        res.status(500).json({ message: 'Internal server error!' });
+    });
+
+    // Pipe the request into busboy
+    req.pipe(busboy);
+});
+
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
 });
 
 app.listen(3000, '0.0.0.0', () => {
